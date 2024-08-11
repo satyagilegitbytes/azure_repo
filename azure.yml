@@ -1,0 +1,50 @@
+trigger:
+- feature  # Adjust this to match your feature branch
+
+pool:
+  vmImage: 'windows-latest'  # Choose the appropriate VM image
+
+variables:
+  BuildConfiguration: 'Release'  # Define default build configuration, adjust as needed
+  BuildPlatform: 'Any CPU'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Use .NET Core SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '3.1.409'  # Replace with the version of the .NET SDK you need
+
+- task: NuGetToolInstaller@1
+  displayName: 'Install NuGet'
+  inputs:
+    versionSpec: '6.10.1'  # Ensure the latest version of NuGet is used
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: '**/Instem.Benchmarks.Viewer.csproj'
+    vstsFeed: '13746b27-d5a3-4317-8d45-a7705f5d4bb2'
+    verbosityRestore: 'Detailed'  # Fix missing quotes
+    verbosityPack: 'Detailed'     # Fix missing quotes
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
+  inputs:
+    command: build
+    projects: '**/Instem.Benchmarks.Viewer.csproj'
+    arguments: '--configuration $(BuildConfiguration) --no-restore'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet publish'
+  inputs:
+    command: publish
+    projects: '**/Instem.Benchmarks.Viewer.csproj'
+    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) --no-restore'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Pipeline Artifact'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'BenchmarkViewerArtifact'  # Fix property name
